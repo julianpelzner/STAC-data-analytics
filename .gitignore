@@ -1,0 +1,39 @@
+# --- Python ---
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Environment / secrets ---
+.env
+.env.local
+gcp-service-account*.json
+*-key.json
+credentials/
+
+# --- dbt ---
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+.dbt/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Data: ignore large/scratch pulls, keep the committed samples ---
+data/raw/
+data/**/*.parquet
+data/**/*.csv
+!data/raw_sample/*.parquet
+!data/raw_sample/*.csv
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Logs ---
+*.log
