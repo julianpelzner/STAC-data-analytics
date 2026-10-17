@@ -1,0 +1,43 @@
+name: stac_analytics
+version: "0.1.0"
+profile: stac_analytics
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Each layer lands in its own BigQuery dataset. dbt's default schema naming
+# appends the custom schema to the target dataset, e.g. dev builds go to
+# dbt_dev_staging / dbt_dev_marts and prod to satellite_analytics_marts.
+models:
+  stac_analytics:
+    # Push model/column descriptions into BigQuery so the BI layer sees them.
+    +persist_docs:
+      relation: true
+      columns: true
+
+    # 1:1 with raw sources: rename, cast, light cleaning. Views are free to store.
+    staging:
+      +materialized: view
+      +schema: staging
+
+    # Business-logic joins (e.g. orders ↔ imagery). Views keep them inspectable.
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+
+    # One mart per business question; tables so dashboards query fast and cheap.
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  stac_analytics:
+    +schema: seeds

@@ -1,0 +1,33 @@
+# Committed on purpose: holds no secrets, only env-var lookups. dbt picks up a
+# profiles.yml in the working directory, so run dbt from dbt_project/.
+#
+# Auth uses Application Default Credentials (method: oauth), which covers both
+# `gcloud auth application-default login` locally and a service-account key
+# exposed via GOOGLE_APPLICATION_CREDENTIALS in CI.
+stac_analytics:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: "{{ env_var('DBT_DEV_DATASET', 'dbt_dev') }}"
+      location: "{{ env_var('BIGQUERY_LOCATION', 'US') }}"
+      threads: 4
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      priority: interactive
+      # Free-tier guardrail: fail any single query that would scan > 1 GB.
+      maximum_bytes_billed: 1000000000
+
+    prod:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: "{{ env_var('BIGQUERY_DATASET', 'satellite_analytics') }}"
+      location: "{{ env_var('BIGQUERY_LOCATION', 'US') }}"
+      threads: 4
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      priority: interactive
+      maximum_bytes_billed: 1000000000
