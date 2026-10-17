@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import date
+from typing import Any
 
 import pandas as pd
 
@@ -21,10 +22,15 @@ class ValidationReport:
     row_count: int
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    rows_by_region: dict[str, int] = field(default_factory=dict[str, int])
+    null_cloud_cover_rate_by_region: dict[str, float] = field(default_factory=dict[str, float])
 
     @property
     def ok(self) -> bool:
         return not self.errors
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"ok": self.ok, **asdict(self)}
 
 
 def validate_items(
@@ -44,6 +50,11 @@ def validate_items(
         report.errors.append("no items returned")
         return report
 
+    counts = df["region"].value_counts()
+    report.rows_by_region = {str(r): int(n) for r, n in sorted(counts.items())}
+    for region in expected_regions or []:
+        report.rows_by_region.setdefault(region, 0)
+
     for col in NOT_NULL_COLUMNS:
         n = int(df[col].isna().sum())
         if n:
@@ -59,6 +70,7 @@ def validate_items(
         report.errors.append(f"cloud_cover: {out_of_range} values outside [0, 100]")
 
     null_cloud_by_region = cloud.isna().groupby(df["region"]).mean()
+    report.null_cloud_cover_rate_by_region = {str(r): float(rate) for r, rate in null_cloud_by_region.items()}
     for region, rate in null_cloud_by_region.items():
         if rate > NULL_CLOUD_COVER_WARN_RATE:
             report.warnings.append(f"cloud_cover: {rate:.1%} null in region {region!r}")

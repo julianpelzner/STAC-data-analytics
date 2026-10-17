@@ -23,6 +23,8 @@ def test_clean_data_passes(clean_df):
     assert report.ok, report.errors
     assert report.warnings == []
     assert report.row_count == 5
+    assert report.rows_by_region == {"sahel": 5}
+    assert report.null_cloud_cover_rate_by_region == {"sahel": 0.0}
 
 
 def test_empty_dataframe_fails():
@@ -100,3 +102,4 @@ def test_missing_region_warns(clean_df):
     report = validate_items(clean_df, expected_regions=["sahel", "amazon"])
     assert report.ok
     assert any("amazon" in w for w in report.warnings)
+    assert report.rows_by_region["amazon"] == 0

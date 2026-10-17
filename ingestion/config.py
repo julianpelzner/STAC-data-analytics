@@ -21,6 +21,7 @@ DEFAULT_COLLECTION = "sentinel-2-l2a"
 AOI_CONFIG_PATH = INGESTION_DIR / "aois.yaml"
 RAW_OUTPUT_DIR = REPO_ROOT / "data" / "raw" / "stac_items"
 SAMPLE_OUTPUT_PATH = REPO_ROOT / "data" / "raw_sample" / "stac_items_sample.parquet"
+VALIDATION_REPORT_DIR = REPO_ROOT / "data" / "raw" / "validation_reports"
 
 
 @dataclass(frozen=True)
