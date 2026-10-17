@@ -1,0 +1,4 @@
+# dbt toolchain, kept separate from the ingestion requirements so the Python
+# ingestion env stays light and CI can install each half independently.
+dbt-core>=1.12,<1.13
+dbt-bigquery>=1.12,<1.13
