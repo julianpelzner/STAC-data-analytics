@@ -62,7 +62,7 @@ See the project write-up for the full reasoning behind what's tested at each lay
 - [x] Rough architecture diagram
 
 ### Ingest
-- [ ] Pull STAC metadata, validate it
+- [x] Pull STAC metadata, validate it
 - [ ] Build the synthetic business-data generator
 - [ ] Sketch and implement the join logic
 - [ ] Land both into BigQuery raw tables, basic data quality checks

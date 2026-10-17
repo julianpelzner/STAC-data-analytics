@@ -1,0 +1,44 @@
+{
+  "type": "Feature",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/eo/v1.1.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json"
+  ],
+  "id": "S2A_MSIL2A_20260830T103601_R065_T31PCR_20260830T200111",
+  "bbox": [1.1444793, 13.4732217, 1.8684789, 14.4696562],
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[
+      [1.8684789, 14.4696562],
+      [1.6344922, 13.4757946],
+      [1.1524089, 13.4732217],
+      [1.1444793, 14.4655139],
+      [1.8684789, 14.4696562]
+    ]]
+  },
+  "properties": {
+    "datetime": "2026-08-30T10:36:01.024000Z",
+    "platform": "Sentinel-2A",
+    "instruments": ["msi"],
+    "s2:mgrs_tile": "31PCR",
+    "constellation": "Sentinel 2",
+    "eo:cloud_cover": 18.311757,
+    "sat:orbit_state": "descending",
+    "sat:relative_orbit": 65,
+    "s2:water_percentage": 0.238808,
+    "s2:mean_solar_zenith": 19.4409021521823,
+    "s2:mean_solar_azimuth": 103.038196783941,
+    "s2:processing_baseline": "05.12",
+    "s2:snow_ice_percentage": 0.0,
+    "s2:vegetation_percentage": 6.742716,
+    "s2:thin_cirrus_percentage": 2.407458,
+    "s2:cloud_shadow_percentage": 8.677527,
+    "s2:nodata_pixel_percentage": 40.70605,
+    "s2:high_proba_clouds_percentage": 6.518484,
+    "s2:medium_proba_clouds_percentage": 9.385815
+  },
+  "links": [],
+  "assets": {},
+  "collection": "sentinel-2-l2a"
+}

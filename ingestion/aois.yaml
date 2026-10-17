@@ -1,0 +1,23 @@
+# Regional Areas of Interest for the STAC metadata pull.
+# bbox = [min_lon, min_lat, max_lon, max_lat] (WGS84). Kept ~1°x1° to bound item counts.
+# Regions are chosen to contrast climates / cloud regimes for the
+# "collection success rate by region & conditions" question.
+aois:
+  - name: southeast_asia
+    description: Central Thailand (Chao Phraya basin) - monsoon climate
+    bbox: [100.0, 14.0, 101.0, 15.0]
+  - name: sahel
+    description: Southwest Niger near Niamey - semi-arid, short wet season
+    bbox: [1.5, 13.0, 2.5, 14.0]
+  - name: amazon
+    description: Eastern Para, Brazil - humid tropical rainforest
+    bbox: [-52.5, -4.0, -51.5, -3.0]
+  - name: western_europe
+    description: Central Netherlands - temperate maritime
+    bbox: [5.0, 52.0, 6.0, 53.0]
+  - name: us_midwest
+    description: Central Iowa - continental, cropland
+    bbox: [-94.0, 41.5, -93.0, 42.5]
+  - name: middle_east
+    description: Inland UAE - hot desert
+    bbox: [54.5, 23.5, 55.5, 24.5]
