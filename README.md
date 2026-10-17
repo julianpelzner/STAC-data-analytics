@@ -57,7 +57,7 @@ See the project write-up for the full reasoning behind what's tested at each lay
 ### Scope & Foundation
 - [x] Finalize the 3 business questions
 - [x] Public repo live
-- [ ] dbt project scaffolded
+- [x] dbt project scaffolded
 - [ ] GCP project + BigQuery + GCS set up
 - [x] Rough architecture diagram
 
