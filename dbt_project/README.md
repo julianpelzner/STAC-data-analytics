@@ -8,7 +8,7 @@ dbt-bigquery project that turns the raw STAC imagery and synthetic business tabl
 
 ```bash
 # from the repo root
-pip install -r requirements-dbt.txt          # dbt-core + dbt-bigquery 1.12.x
+pip install -r requirements-dev.txt          # ingestion + dbt-core/dbt-bigquery 1.12.x + pytest
 gcloud auth application-default login        # local auth (Application Default Credentials)
 
 cd dbt_project
