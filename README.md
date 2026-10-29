@@ -58,7 +58,7 @@ See the project write-up for the full reasoning behind what's tested at each lay
 - [x] Finalize the 3 business questions
 - [x] Public repo live
 - [x] dbt project scaffolded
-- [ ] GCP project + BigQuery + GCS set up
+- [x] GCP project + BigQuery + GCS set up ([setup runbook](docs/gcp_setup.md))
 - [x] Rough architecture diagram
 
 ### Ingest
@@ -147,6 +147,8 @@ stac-data-analytics/
 ## Running This Yourself
 
 _Instructions will be filled in once ingestion and dbt are wired up — for now, see [`/data/README.md`](./data/README.md) for how sample data is provided so the project can be explored without live credentials._
+
+To stand up your own GCP backend (bucket, BigQuery datasets, service account, cost guardrails), follow [`docs/gcp_setup.md`](docs/gcp_setup.md).
 
 ---
 
