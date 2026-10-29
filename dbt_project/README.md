@@ -25,12 +25,13 @@ Always run dbt from inside `dbt_project/`. dbt picks up the committed `profiles.
 | Variable | Required | Default | Used for |
 |---|---|---|---|
 | `GCP_PROJECT_ID` | yes | — | BigQuery project (dbt fails fast if it's missing) |
+| `BIGQUERY_RAW_DATASET` | no | `raw` | Raw landing dataset that sources read from |
 | `BIGQUERY_DATASET` | no | `satellite_analytics` | Base dataset for the `prod` target |
 | `DBT_DEV_DATASET` | no | `dbt_dev` | Base dataset for the `dev` target |
 | `BIGQUERY_LOCATION` | no | `US` | Dataset location |
 | `DBT_TARGET` | no | `dev` | Which target to run against |
 
-Both targets use `method: oauth`, which resolves Application Default Credentials. Locally that means `gcloud auth application-default login`. In CI, set `GOOGLE_APPLICATION_CREDENTIALS` to point at a service-account key. Every query is capped at 1 GB scanned (`maximum_bytes_billed`) so a bad model can't eat into the BigQuery free tier.
+Both targets use `method: oauth`, which resolves Application Default Credentials. Locally that means `gcloud auth application-default login`. In CI, `GOOGLE_APPLICATION_CREDENTIALS` will point at a short-lived credential file from Workload Identity Federation, so no service-account key is needed (see [`docs/gcp_setup.md`](../docs/gcp_setup.md)). Every query is capped at 1 GB scanned (`maximum_bytes_billed`) so a bad model can't eat into the BigQuery free tier.
 
 ## Layout
 
