@@ -23,6 +23,11 @@ RAW_OUTPUT_DIR = REPO_ROOT / "data" / "raw" / "stac_items"
 SAMPLE_OUTPUT_PATH = REPO_ROOT / "data" / "raw_sample" / "stac_items_sample.parquet"
 VALIDATION_REPORT_DIR = REPO_ROOT / "data" / "raw" / "validation_reports"
 
+# Synthetic business-data generator (see docs/data_model.md).
+SYNTHETIC_CONFIG_PATH = INGESTION_DIR / "synthetic" / "config.yaml"
+SYNTHETIC_RAW_DIR = REPO_ROOT / "data" / "raw" / "synthetic"
+SYNTHETIC_SAMPLE_DIR = REPO_ROOT / "data" / "raw_sample"
+
 
 @dataclass(frozen=True)
 class AOI:

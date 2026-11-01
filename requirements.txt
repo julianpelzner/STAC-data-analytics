@@ -3,3 +3,6 @@ pandas>=2.0
 pyarrow>=14.0
 python-dotenv>=1.0
 pyyaml>=6.0
+numpy>=1.26
+shapely>=2.0
+Faker>=24.0
