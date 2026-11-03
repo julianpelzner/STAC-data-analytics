@@ -1,0 +1,16 @@
+customer_id,company_name,segment,contract_tier,country,signup_date
+CUST-00001,"Rodriguez, Figueroa and Sanchez",agriculture,professional,CU,2024-07-08
+CUST-00002,Moore-Bernard,agriculture,self_serve,LU,2024-03-24
+CUST-00003,"Lee, Jones and Stanley",agriculture,enterprise,JP,2023-09-25
+CUST-00004,"Watts, Robinson and Nguyen",agriculture,self_serve,BG,2024-11-18
+CUST-00005,Wilkerson-Day,agriculture,enterprise,CV,2024-06-26
+CUST-00006,"Snyder, Campos and Callahan",agriculture,self_serve,DE,2025-06-01
+CUST-00007,"Gaines, Harrell and Evans",agriculture,professional,DZ,2024-04-01
+CUST-00008,Brown PLC,agriculture,professional,BR,2024-08-31
+CUST-00009,"Santos, Kim and Holmes",agriculture,enterprise,CL,2024-05-20
+CUST-00010,Jones-Young,agriculture,self_serve,SV,2025-04-24
+CUST-00011,Shields-Brown,agriculture,self_serve,TD,2024-09-26
+CUST-00012,Russell Group,agriculture,self_serve,GH,2025-07-17
+CUST-00013,"Higgins, Moore and Phillips",agriculture,self_serve,BG,2024-12-04
+CUST-00014,"Hensley, Powell and David",agriculture,self_serve,TN,2024-12-06
+CUST-00015,Jones and Sons,agriculture,self_serve,SD,2024-09-24
