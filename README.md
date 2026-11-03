@@ -24,6 +24,8 @@ Every table, model, and dashboard in this repo traces back to one of these three
 
 Real satellite imagery metadata (pulled via STAC) and synthetic business data are landed in Google Cloud Storage, loaded into BigQuery, modeled through dbt (staging → intermediate → marts), and served through both a BI layer and a geospatial notebook. Each stage is covered by its own tests — see [Testing](#testing) below.
 
+For the stage-by-stage breakdown and the contracts between layers, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). The reasoning behind the non-obvious design choices — and the alternatives rejected — is recorded as decision records in [`docs/decisions/`](docs/decisions/).
+
 ---
 
 ## Stack
@@ -139,6 +141,7 @@ stac-data-analytics/
 ├── notebooks/          # geospatial analysis
 ├── dashboards/         # BI links + screenshots
 ├── case_studies/       # insight-first write-up per business question
+├── docs/               # architecture, data model, setup runbook, decision records (ADRs)
 └── .github/workflows/  # CI (pytest + dbt test) and scheduled pipeline runs
 ```
 
