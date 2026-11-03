@@ -1,0 +1,114 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: >
+      Customers (demand side), one row per customer. 1:1 with `raw.customers`.
+    columns:
+      - name: customer_id
+        description: Primary key, e.g. `CUST-00001`.
+        data_tests: [unique, not_null]
+      - name: segment
+        description: Customer vertical; drives AOI shape, cloud tolerance and pricing.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [agriculture, insurance, energy_utilities, government, research_ngo]
+      - name: contract_tier
+        description: Commercial tier.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [self_serve, professional, enterprise]
+
+  - name: stg_aois
+    description: >
+      Areas of interest, one per order target. `aoi_geog` is the WGS84 polygon
+      as a BigQuery GEOGRAPHY, parsed once here from the raw WKT (ADR-0002).
+    columns:
+      - name: aoi_id
+        description: Primary key, e.g. `AOI-00001`.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Owning customer.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: region
+        description: One of the six STAC regions; coarse join key to scenes.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [southeast_asia, sahel, amazon, western_europe, us_midwest, middle_east]
+      - name: shape_type
+        description: AOI archetype for the segment.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [field, floodplain, corridor, site, admin_block, study_area]
+      - name: aoi_geog
+        description: WGS84 polygon as GEOGRAPHY.
+        data_tests: [not_null]
+
+  - name: stg_orders
+    description: >
+      Orders (demand). Has no status column by design — fulfillment is derived
+      downstream in `int_order_fulfillment`, never stored here.
+    columns:
+      - name: order_id
+        description: Primary key, e.g. `ORD-000001`.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        description: Ordering customer; must equal the AOI's owner (enforced by a singular test later).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: aoi_id
+        description: Target AOI.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_aois')
+                field: aoi_id
+      - name: priority
+        description: Delivery priority.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [standard, rush]
+
+  - name: stg_stac_items
+    description: >
+      Sentinel-2 scene metadata (supply side), one row per (item_id, region).
+      `scene_geog` is the footprint as GEOGRAPHY (ADR-0002). The cloud/quality
+      percentages are retained for Q1 condition analysis.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [item_id, region]
+    columns:
+      - name: item_id
+        description: STAC item id (not unique on its own — see the grain above).
+        data_tests: [not_null]
+      - name: region
+        description: AOI region this scene was pulled for.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [southeast_asia, sahel, amazon, western_europe, us_midwest, middle_east]
+      - name: cloud_cover
+        description: Scene-level `eo:cloud_cover`, 0-100.
+      - name: acquired_at
+        description: Acquisition timestamp (UTC, microsecond precision).
+      - name: scene_geog
+        description: Scene footprint as GEOGRAPHY.
+        data_tests: [not_null]

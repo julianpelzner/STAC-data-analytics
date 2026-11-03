@@ -68,3 +68,12 @@ warrant one:
   public link. Trade-off between capability and a durable portfolio artifact.
 - **Per-layer testing** (pytest for ingestion, dbt tests for models, CI on
   every push) rather than validating only in the BI layer at the end.
+- **Spatial fulfillment join strategy** (`int_order_fulfillment`, see
+  `data_model.md` §6) — cheap region/time/cloud pre-filter before any `ST_*`,
+  coverage aggregated per `(order, date)` with `ST_UNION_AGG`, `GEOGRAPHY`
+  parsed with `make_valid` to avoid the ring-orientation trap, and the model
+  materialized as a **table** (not the layer's default view) because three
+  marts read it. Measured against the loaded `raw` tables on 2026-11-03: 85,756
+  candidate pairs → 23,075 spatial ops, 0.37 MB scanned, ~35 s, 69.7% fulfilled
+  — well under the 1 GB dev guardrail. Worth an ADR once the earlier modeling
+  decisions above are written up.
