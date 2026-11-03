@@ -1,0 +1,178 @@
+# Synthetic business-data generator config.
+#
+# Structural parameters only: what the data looks like. Run parameters
+# (--seed, --start, --end, --output-dir) stay on the CLI so a given config
+# reproduces across runs. See docs/data_model.md for the full rationale.
+#
+# Conventions:
+#   - Region weights are relative (normalized at runtime); a region omitted
+#     from a segment's `regions` map gets weight 0.
+#   - {min, max} ranges on area_km2 are sampled LOG-uniform; day ranges and
+#     vertex ranges are sampled uniform.
+#   - Probabilities (tier_mix, rush_share) are on [0, 1]; tier_mix sums to 1.
+#   - compactness and the final vertex_count are MEASURED off the generated
+#     geometry, not set here. The `shapes` block drives how geometry is drawn;
+#     a segment's area_km2 / vertex_count ranges are inputs to that drawing.
+
+# --- Approximate volumes (decision 1) -----------------------------------
+# n_customers is exact. AOIs and orders grow from the per-segment means
+# below (Poisson-ish), so totals land NEAR these targets, not exactly on them.
+volumes:
+  n_customers: 150
+  target_aois: 500      # informational: emergent from aois_per_customer
+  target_orders: 5000   # informational: emergent from orders_per_aoi
+
+# --- Pricing (data_model.md §5, drives Q2) ------------------------------
+pricing:
+  base_rate_per_km2: 8.00
+  min_order_fee: 150.0
+  tier_multiplier:
+    self_serve: 1.00
+    professional: 0.90
+    enterprise: 0.75
+  priority_multiplier:
+    standard: 1.0
+    rush: 1.5
+  segment_discount:
+    agriculture: 0.00
+    insurance: 0.00
+    energy_utilities: 0.00
+    government: 0.15      # volume discount
+    research_ngo: 0.40    # academic / non-profit
+
+# --- Processing time (data_model.md §6.3, synthetic part of Q3) ----------
+# processing_hours = base_hours[priority]
+#   * (1 + alpha * log1p(area_km2))
+#   * (1 + beta  * (1 - compactness))
+#   * (1 + gamma * log1p(vertex_count))
+#   * lognormal_noise(sigma)
+processing_time:
+  base_hours:
+    standard: 24.0
+    rush: 8.0
+  alpha: 0.10   # area weight
+  beta: 0.50    # shape-irregularity weight (1 - compactness)
+  gamma: 0.15   # vertex-count weight
+  sigma: 0.25   # lognormal noise spread
+
+# --- Geometry generation (decision 3) -----------------------------------
+# How each shape_type is drawn. compactness falls out of these knobs.
+#   radius_jitter  : fractional perturbation of each vertex radius (blobbiness)
+#   aspect_ratio   : length:width for elongated shapes (corridors)
+# The segment's area_km2 range sets the size; vertex_count range sets how many
+# exterior vertices to draw before measuring.
+shapes:
+  field:                      # small, irregular -> low compactness
+    radius_jitter: 0.45
+  floodplain:                 # medium, moderately irregular
+    radius_jitter: 0.30
+  corridor:                   # long thin strip -> very low compactness
+    radius_jitter: 0.15
+    aspect_ratio: {min: 8, max: 25}
+  site:                       # compact facility footprint
+    radius_jitter: 0.20
+  admin_block:                # large near-rectangle -> high compactness
+    radius_jitter: 0.08
+  study_area:                 # mixed, moderate
+    radius_jitter: 0.30
+
+# --- Ordering window behaviour (decisions 4 & 5) ------------------------
+ordering:
+  # window_start = ordered_at; window_end = window_start + window_days.
+  # ordered_at is sampled in [stac_start, stac_end - max_window_days] so every
+  # window stays inside the available STAC data (decision 4).
+  lead_days: 0
+  # Seasonality hook (decision 5): flat in v1. Per-segment monthly weights can
+  # be added here later without touching the generator's interface.
+  seasonality: flat
+  # Customer signup is sampled uniformly within this many days before that
+  # customer's earliest order.
+  max_tenure_days_before_first_order: 730
+
+# --- Segment profiles (data_model.md §4) --------------------------------
+# customer_share across all segments sums to 1.0.
+segments:
+  agriculture:
+    customer_share: 0.35
+    shape_type: field
+    aois_per_customer: 5        # mean; agriculture monitors many fields
+    orders_per_aoi: 12          # mean; recurring through the season
+    area_km2: {min: 0.5, max: 20}
+    vertex_count: {min: 8, max: 40}
+    cloud_max: 20
+    window_days: {min: 7, max: 14}
+    rush_share: 0.05
+    tier_mix: {self_serve: 0.50, professional: 0.40, enterprise: 0.10}
+    regions:
+      us_midwest: 3
+      western_europe: 3
+      southeast_asia: 2
+      sahel: 1
+
+  insurance:
+    customer_share: 0.15
+    shape_type: floodplain
+    aois_per_customer: 3
+    orders_per_aoi: 6
+    area_km2: {min: 10, max: 200}
+    vertex_count: {min: 12, max: 30}
+    cloud_max: 40
+    window_days: {min: 5, max: 14}
+    rush_share: 0.45
+    tier_mix: {self_serve: 0.10, professional: 0.50, enterprise: 0.40}
+    regions:
+      southeast_asia: 3
+      sahel: 2
+      us_midwest: 2
+
+  energy_utilities:
+    customer_share: 0.15
+    shape_type: corridor        # 20% of AOIs are `site`; see shape_mix below
+    shape_mix: {corridor: 0.80, site: 0.20}
+    aois_per_customer: 4
+    orders_per_aoi: 8
+    area_km2: {min: 5, max: 150}
+    vertex_count: {min: 6, max: 60}
+    cloud_max: 30
+    window_days: {min: 25, max: 35}
+    rush_share: 0.10
+    tier_mix: {self_serve: 0.05, professional: 0.25, enterprise: 0.70}
+    regions:
+      middle_east: 3
+      us_midwest: 2
+      amazon: 1
+
+  government:
+    customer_share: 0.10
+    shape_type: admin_block
+    aois_per_customer: 2
+    orders_per_aoi: 3
+    area_km2: {min: 500, max: 2500}
+    vertex_count: {min: 4, max: 8}
+    cloud_max: 10
+    window_days: {min: 30, max: 90}
+    rush_share: 0.02
+    tier_mix: {self_serve: 0.00, professional: 0.20, enterprise: 0.80}
+    regions:
+      western_europe: 3
+      middle_east: 3
+      us_midwest: 2
+      southeast_asia: 2
+      sahel: 2
+      amazon: 2
+
+  research_ngo:
+    customer_share: 0.25
+    shape_type: study_area
+    aois_per_customer: 4
+    orders_per_aoi: 5
+    area_km2: {min: 20, max: 500}
+    vertex_count: {min: 6, max: 25}
+    cloud_max: 50
+    window_days: {min: 30, max: 60}
+    rush_share: 0.00
+    tier_mix: {self_serve: 1.00, professional: 0.00, enterprise: 0.00}
+    regions:
+      amazon: 3
+      sahel: 2
+      southeast_asia: 1
