@@ -32,7 +32,6 @@ For the stage-by-stage breakdown and the contracts between layers, see [`docs/AR
 
 | Layer | Tool |
 |---|---|
-| Version control | GitHub, public repo, real PR workflow |
 | Ingestion | Python (`pystac-client` for imagery, `Faker`/`numpy` for synthetic data) |
 | Warehouse | Google BigQuery (free tier) + GCS for raw landing |
 | Transformation | dbt-bigquery: staging → intermediate → mart, with tests + docs |
