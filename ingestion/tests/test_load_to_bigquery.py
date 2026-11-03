@@ -161,7 +161,7 @@ def test_main_uploads_and_loads_all(raw_tree, fake_storage_cls, fake_bq_cls):
     assert cust_call["location"] == "US"
 
 
-def test_main_stac_parquet_autodetects(raw_tree, fake_storage_cls, fake_bq_cls):
+def test_main_stac_parquet_loads_with_explicit_schema(raw_tree, fake_storage_cls, fake_bq_cls):
     storage = fake_storage_cls()
     bq = fake_bq_cls(storage=storage)
 
@@ -172,8 +172,13 @@ def test_main_stac_parquet_autodetects(raw_tree, fake_storage_cls, fake_bq_cls):
 
     (call,) = bq.load_calls
     jc = call["job_config"]
-    assert jc.autodetect is True
-    assert jc.schema is None  # parquet brings its own schema
+    assert not jc.autodetect  # explicit schema, never autodetect
+    types = {f.name: f.field_type for f in jc.schema}
+    assert types["acquired_at"] == "TIMESTAMP"  # the ns->INT64 trap we hit for real
+    assert types["ingested_at"] == "TIMESTAMP"
+    assert types["acquired_date"] == "DATE"
+    assert types["relative_orbit"] == "INTEGER"
+    assert list(types) == list(SOURCES["stac_items"].expected_columns)  # complete + in order
 
 
 def test_main_dq_failure_loads_nothing(raw_tree, fake_storage_cls, fake_bq_cls):

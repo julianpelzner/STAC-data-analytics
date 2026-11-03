@@ -30,11 +30,46 @@ import pandas as pd
 from google.cloud import bigquery, storage
 
 from ingestion import config
+from ingestion import transform
 from ingestion.transform import COLUMNS as STAC_COLUMNS
 
 logger = logging.getLogger("ingestion.load_to_bigquery")
 
 _SF = bigquery.SchemaField
+
+
+def _stac_schema() -> list[bigquery.SchemaField]:
+    """Derive the stac_items BigQuery schema from transform.py's dtype lists.
+
+    Single source of truth: adding a column to transform.COLUMNS (and the right
+    dtype list) flows through here automatically, the same way validate.py keys
+    off COLUMNS. Loading with this explicit schema — rather than autodetect —
+    means a type regression in the Parquet writer (e.g. nanosecond timestamps,
+    which BigQuery cannot store) fails the load loudly instead of silently
+    landing as INT64.
+    """
+    timestamps = {"acquired_at", "ingested_at"}
+    dates = {"acquired_date"}
+    integers = {"relative_orbit"}
+    schema = []
+    for col in STAC_COLUMNS:
+        if col in timestamps:
+            bq_type = "TIMESTAMP"
+        elif col in dates:
+            bq_type = "DATE"
+        elif col in integers:
+            bq_type = "INTEGER"
+        elif col in transform.FLOAT_COLUMNS:
+            bq_type = "FLOAT"
+        elif col in transform.STRING_COLUMNS:
+            bq_type = "STRING"
+        else:  # pragma: no cover - guards against an untyped new column
+            raise ValueError(f"no BigQuery type mapping for stac_items column {col!r}")
+        schema.append(_SF(col, bq_type))
+    return schema
+
+
+STAC_SCHEMA = _stac_schema()
 
 # Explicit BigQuery schemas for the CSV synthetic tables keep the load
 # deterministic and 1:1 with docs/data_model.md §3. `stac_items` is Parquet, so
@@ -94,7 +129,7 @@ SOURCES: dict[str, Source] = {
         source_format="PARQUET",
         pk=("item_id", "region"),
         expected_columns=tuple(STAC_COLUMNS),
-        schema=None,
+        schema=STAC_SCHEMA,
     ),
     "customers": Source(
         table="customers",
@@ -213,15 +248,17 @@ def load_from_gcs(
     location: str,
 ) -> int:
     """Load one GCS object into `table_id`, replacing it. Returns rows loaded."""
+    # Every table loads with an explicit schema (never autodetect), so a type
+    # the warehouse can't store fails the load instead of landing silently
+    # mistyped. Parquet matches the schema by column name; CSV by position.
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+        schema=source.schema,
     )
     if source.source_format == "PARQUET":
         job_config.source_format = bigquery.SourceFormat.PARQUET
-        job_config.autodetect = True
     else:
         job_config.source_format = bigquery.SourceFormat.CSV
-        job_config.schema = source.schema
         job_config.skip_leading_rows = 1  # header row
 
     job = bq_client.load_table_from_uri(gcs_uri, table_id, job_config=job_config, location=location)
