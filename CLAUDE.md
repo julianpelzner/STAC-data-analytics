@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Portfolio analytics stack: real Sentinel-2 STAC imagery metadata + synthetic business data → GCS/BigQuery → dbt (staging → intermediate → marts) → BI dashboards and a geospatial notebook. Everything is meant to trace back to three business questions (see README): collection success rate by region/conditions, revenue per AOI by customer segment, and AOI complexity vs. fulfillment time.
 
-**Built so far:** STAC ingestion (`ingestion/`), a scaffolded dbt project (`dbt_project/`: config, profiles and layer folders, but no models yet), and the GCP backend (bucket, `raw` + `satellite_analytics` datasets, service account; see `docs/gcp_setup.md`). **Not built yet:** BigQuery/GCS loaders, the synthetic data generator, dbt models, `.github/workflows/ci.yml`. `case_studies/`, `dashboards/` and `notebooks/` hold placeholder READMEs. Check the README roadmap before assuming something exists.
+**Built so far:** STAC ingestion, the synthetic business-data generator, and the GCS→BigQuery loader (all in `ingestion/`); a scaffolded dbt project (`dbt_project/`: config, profiles and layer folders, but no models yet); and the GCP backend (bucket, `raw` + `satellite_analytics` datasets, service account; see `docs/gcp_setup.md`). **Not built yet:** dbt models, `.github/workflows/ci.yml`. `case_studies/`, `dashboards/` and `notebooks/` hold placeholder READMEs. Check the README roadmap before assuming something exists.
 
 
 ## Commands
@@ -24,6 +24,13 @@ python -m pytest ingestion/tests/test_validate.py::test_duplicates_fail
 python -m ingestion.pull_stac_metadata                       # all AOIs, trailing 12 full months
 python -m ingestion.pull_stac_metadata --regions sahel amazon --start 2026-08-01 --end 2026-09-30
 python -m ingestion.pull_stac_metadata --max-items-per-window 5   # quick live smoke test
+
+# Synthetic business data (deterministic; see docs/data_model.md)
+python -m ingestion.generate_synthetic --seed 42
+
+# Load local raw files -> GCS -> BigQuery raw.* (needs ADC + GCP_PROJECT_ID/GCS_BUCKET_NAME)
+python -m ingestion.load_to_bigquery --dry-run      # DQ checks only, touches no GCP
+python -m ingestion.load_to_bigquery --only customers orders
 
 # dbt
 cd dbt_project && dbt deps && dbt parse    # validate the project
@@ -44,6 +51,10 @@ Pipeline in `ingestion/pull_stac_metadata.py:main`: load AOIs → search → fla
 - CLI behavior: on validation errors nothing is written and exit code is 1 (unless `--no-fail-on-validation`); unknown `--regions` → exit 2. A JSON validation report is written on **every** run, including failures.
 
 Outputs: full pulls and validation reports go to `data/raw/` (gitignored); a stratified ~500-row sample is overwritten at `data/raw_sample/stac_items_sample.parquet`, which **is committed** so the project runs without credentials. `.gitignore` excludes all parquet/csv under `data/` except `data/raw_sample/`.
+
+## Loader (`ingestion/load_to_bigquery.py`)
+
+Lands the local raw files into GCS and BigQuery `raw.*`. One `Source` spec per table drives everything: local path, GCS prefix, format, PK, and an explicit BigQuery schema. Every table loads with its schema and **never** autodetect — BigQuery can't store the nanosecond timestamps pandas writes to Parquet by default, and under autodetect `acquired_at`/`ingested_at` land silently as `INT64`; an explicit schema turns that into a loud load failure instead. The synthetic schemas (`CUSTOMERS_SCHEMA` etc.) are hand-written; `STAC_SCHEMA` is derived from `transform.COLUMNS` + its dtype lists, so a new STAC column flows through automatically (keep `transform.COLUMNS` and `docs/data_model.md` §3 in sync). Flow per run: read each file → `check_dataframe` DQ (non-empty, all columns present, PK unique + non-null) → upload to `gs://<bucket>/<prefix>/ingest_date=YYYY-MM-DD/<file>` (immutable, replayable) → `load_table_from_uri` with `WRITE_TRUNCATE` → post-load row-count check. DQ runs on **all** sources before anything uploads, so one bad file blocks the whole batch (exit 1), matching `pull_stac_metadata`'s validation gate; `--no-fail-on-dq` loads only the sources that pass. `main(argv, storage_client=, bq_client=)` injects both GCP clients, so tests use the `fake_storage_cls`/`fake_bq_cls` fixtures and never hit the network.
 
 ## Testing conventions
 
