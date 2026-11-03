@@ -49,7 +49,7 @@ customers ──< aois ──< orders ──(AOI geometry ∩ scene footprint, t
 
 ## 3. Table schemas
 
-All tables land in BigQuery `raw` 1:1 with the generated CSVs. Timestamps are UTC.
+All tables land in BigQuery `raw` 1:1 with the generated CSVs. Timestamps are UTC, and at **microsecond** precision — BigQuery `TIMESTAMP` is microsecond and rejects the nanosecond timestamps pandas writes to Parquet by default, so `transform.py` casts the STAC `acquired_at`/`ingested_at` to `datetime64[us]` before writing.
 
 ### 3.1 `customers`
 

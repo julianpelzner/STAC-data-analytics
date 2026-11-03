@@ -124,9 +124,12 @@ def records_to_dataframe(records: list[dict]) -> pd.DataFrame:
     df["relative_orbit"] = pd.to_numeric(df["relative_orbit"], errors="coerce").astype("Int64")
     for col in STRING_COLUMNS:
         df[col] = df[col].astype("string")
-    df["acquired_at"] = pd.to_datetime(df["acquired_at"], utc=True)
+    # Microsecond, not pandas' default nanosecond: BigQuery TIMESTAMP is
+    # microsecond precision and rejects nanosecond Parquet outright, so the
+    # landed file must already be at us for the raw loader to type it correctly.
+    df["acquired_at"] = pd.to_datetime(df["acquired_at"], utc=True).astype("datetime64[us, UTC]")
     df["acquired_date"] = pd.to_datetime(df["acquired_date"]).dt.date
-    df["ingested_at"] = pd.to_datetime(df["ingested_at"], utc=True)
+    df["ingested_at"] = pd.to_datetime(df["ingested_at"], utc=True).astype("datetime64[us, UTC]")
 
     return (
         df.drop_duplicates(subset=["item_id", "region"], keep="first")

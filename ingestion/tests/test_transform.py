@@ -54,6 +54,14 @@ def test_records_to_dataframe_types_and_dedupe(make_item):
     assert isinstance(df["acquired_at"].dtype, pd.DatetimeTZDtype)
 
 
+def test_timestamps_are_microsecond(make_item):
+    # BigQuery TIMESTAMP is microsecond precision and rejects nanosecond
+    # Parquet, so the landed dtype must be us, not pandas' default ns.
+    df = records_to_dataframe([item_to_record(make_item("a"), "sahel", STAC_URL, INGESTED_AT)])
+    assert df["acquired_at"].dtype == pd.DatetimeTZDtype(unit="us", tz="UTC")
+    assert df["ingested_at"].dtype == pd.DatetimeTZDtype(unit="us", tz="UTC")
+
+
 def test_records_to_dataframe_empty():
     df = records_to_dataframe([])
     assert df.empty
