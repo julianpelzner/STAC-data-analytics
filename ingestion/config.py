@@ -28,6 +28,13 @@ SYNTHETIC_CONFIG_PATH = INGESTION_DIR / "synthetic" / "config.yaml"
 SYNTHETIC_RAW_DIR = REPO_ROOT / "data" / "raw" / "synthetic"
 SYNTHETIC_SAMPLE_DIR = REPO_ROOT / "data" / "raw_sample"
 
+# GCS + BigQuery raw landing (see ingestion/load_to_bigquery.py, docs/gcp_setup.md).
+# Required at load time, not at import, so the project still runs offline.
+GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
+BIGQUERY_RAW_DATASET = os.getenv("BIGQUERY_RAW_DATASET", "raw")
+BIGQUERY_LOCATION = os.getenv("BIGQUERY_LOCATION", "US")
+
 
 @dataclass(frozen=True)
 class AOI:

@@ -65,10 +65,10 @@ See the project write-up for the full reasoning behind what's tested at each lay
 
 ### Ingest
 - [x] Pull STAC metadata, validate it
-- [ ] Build the synthetic business-data generator
-- [ ] Sketch and implement the join logic
-- [ ] Land both into BigQuery raw tables, basic data quality checks
-- [ ] Unit tests for ingestion scripts (`ingestion/tests/`)
+- [x] Build the synthetic business-data generator
+- [x] Sketch the join logic (designed in [`docs/data_model.md`](docs/data_model.md) §6; implemented in the dbt intermediate layer below)
+- [x] Land both into BigQuery raw tables, basic data quality checks ([`ingestion/load_to_bigquery.py`](ingestion/load_to_bigquery.py))
+- [x] Unit tests for ingestion scripts (`ingestion/tests/`)
 
 ### Model
 - [ ] dbt staging layer

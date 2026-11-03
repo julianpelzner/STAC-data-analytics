@@ -243,7 +243,7 @@ Checked by pytest on the generator output and re-asserted as dbt tests on `raw`/
 | `data/raw/synthetic/` | Full generated CSVs (gitignored) |
 | `data/raw_sample/{customers,aois,orders}.csv` | Committed sample, so the project runs without credentials |
 
-The loaders (next branch) write these to `gs://<project>-raw/synthetic/<table>/ingest_date=YYYY-MM-DD/` and load them into `raw.customers`, `raw.aois` and `raw.orders`.
+`ingestion/load_to_bigquery.py` writes these to `gs://<project>-raw/synthetic/<table>/ingest_date=YYYY-MM-DD/` and loads them into `raw.customers`, `raw.aois` and `raw.orders` (and the STAC parquet into `raw.stac_items`), 1:1 with `WRITE_TRUNCATE`. It runs the §7 PK/column checks locally before upload and blocks the whole batch on any failure.
 
 ---
 
@@ -252,3 +252,4 @@ The loaders (next branch) write these to `gs://<project>-raw/synthetic/<table>/i
 | Date | Change |
 |---|---|
 | 2026-10-31 | Initial design: segments, schemas, pricing, fulfillment join |
+| 2026-11-03 | Built the GCS→BigQuery loader (`ingestion/load_to_bigquery.py`); added `raw.aois` to dbt sources |

@@ -10,5 +10,7 @@ sources:
         description: Sentinel-2 STAC item metadata, one row per (item_id, region).
       - name: customers
         description: Synthetic customers.
+      - name: aois
+        description: Synthetic areas of interest, one per order target; FK to customers.
       - name: orders
         description: Synthetic orders.
