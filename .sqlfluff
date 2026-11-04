@@ -1,0 +1,26 @@
+# SQL style for the dbt project. Scoped to first-party SQL only — vendored
+# packages (dbt_packages/) and compiled output (target/) are excluded below.
+# Uses the dbt templater, so `sqlfluff lint` must be run with the dbt env
+# available (ADC + GCP_PROJECT_ID), the same as dbt itself.
+[sqlfluff]
+templater = dbt
+dialect = bigquery
+max_line_length = 120
+# Exclude rules that fight dbt/BigQuery idioms:
+#   LT05  - long lines (covered by max_line_length)
+#   RF04  - keywords as identifiers (common in generated/staging columns)
+exclude_rules = LT05, RF04
+exclude = dbt_project/dbt_packages, dbt_project/target, dbt_project/logs
+
+[sqlfluff:templater:dbt]
+project_dir = dbt_project
+profiles_dir = dbt_project
+
+[sqlfluff:indentation]
+tab_space_size = 4
+
+[sqlfluff:layout:type:comma]
+line_position = trailing
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower

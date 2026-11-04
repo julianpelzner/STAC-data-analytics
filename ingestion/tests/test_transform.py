@@ -40,14 +40,20 @@ def test_records_to_dataframe_types_and_dedupe(make_item):
     records = [
         item_to_record(make_item("a"), "sahel", STAC_URL, INGESTED_AT),
         item_to_record(make_item("a"), "sahel", STAC_URL, INGESTED_AT),  # duplicate
-        item_to_record(make_item("a"), "amazon", STAC_URL, INGESTED_AT),  # same item, other AOI: kept
+        item_to_record(
+            make_item("a"), "amazon", STAC_URL, INGESTED_AT
+        ),  # same item, other AOI: kept
         item_to_record(make_item("b", drop=["eo:cloud_cover"]), "sahel", STAC_URL, INGESTED_AT),
     ]
     df = records_to_dataframe(records)
 
     assert list(df.columns) == COLUMNS
     assert len(df) == 3
-    assert sorted(zip(df["item_id"], df["region"])) == [("a", "amazon"), ("a", "sahel"), ("b", "sahel")]
+    assert sorted(zip(df["item_id"], df["region"], strict=True)) == [
+        ("a", "amazon"),
+        ("a", "sahel"),
+        ("b", "sahel"),
+    ]
     assert df["cloud_cover"].dtype == "float64"
     assert df["cloud_cover"].isna().sum() == 1
     assert str(df["relative_orbit"].dtype) == "Int64"

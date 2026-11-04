@@ -1,3 +1,12 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["ingestion/tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv", "dbt_project/target", "dbt_project/dbt_packages", "dbt_project/logs"]
+
+[tool.ruff.lint]
+# pycodestyle errors, pyflakes, isort, pyupgrade, flake8-bugbear
+select = ["E", "F", "I", "UP", "B"]

@@ -1,0 +1,19 @@
+# Run `pre-commit install` once to activate. Hooks run only on git-tracked,
+# staged files, so gitignored dbt_packages/ and target/ are never touched.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.3
+    hooks:
+      - id: ruff-check     # lint, with autofix
+        args: [--fix]
+      - id: ruff-format    # format
+
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 4.5.0
+    hooks:
+      - id: sqlfluff-lint
+        # Only your dbt SQL; vendored/compiled SQL is excluded in .sqlfluff too.
+        files: ^dbt_project/(models|macros|snapshots|tests|seeds|analyses)/.*\.sql$
+        additional_dependencies:
+          - dbt-bigquery>=1.12,<1.13
+          - sqlfluff-templater-dbt>=3.2

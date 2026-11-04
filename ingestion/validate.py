@@ -70,7 +70,9 @@ def validate_items(
         report.errors.append(f"cloud_cover: {out_of_range} values outside [0, 100]")
 
     null_cloud_by_region = cloud.isna().groupby(df["region"]).mean()
-    report.null_cloud_cover_rate_by_region = {str(r): float(rate) for r, rate in null_cloud_by_region.items()}
+    report.null_cloud_cover_rate_by_region = {
+        str(r): float(rate) for r, rate in null_cloud_by_region.items()
+    }
     for region, rate in null_cloud_by_region.items():
         if rate > NULL_CLOUD_COVER_WARN_RATE:
             report.warnings.append(f"cloud_cover: {rate:.1%} null in region {region!r}")

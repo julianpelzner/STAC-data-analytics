@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import pystac
@@ -90,7 +90,7 @@ def item_to_record(
     props = item.properties
     acquired_at = item.datetime or pd.to_datetime(props.get("start_datetime"), utc=True)
     if acquired_at is not None and acquired_at.tzinfo is None:
-        acquired_at = acquired_at.replace(tzinfo=timezone.utc)
+        acquired_at = acquired_at.replace(tzinfo=UTC)
 
     minx, miny, maxx, maxy = item.bbox if item.bbox else (None, None, None, None)
     has_bbox = item.bbox is not None

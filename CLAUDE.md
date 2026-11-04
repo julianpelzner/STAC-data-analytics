@@ -38,7 +38,7 @@ dbt build --target dev                      # builds into dbt_dev_<layer>
 
 ```
 
-No linter/formatter is configured.
+Linting/formatting: `ruff check .` and `ruff format .` for Python (config in `pyproject.toml`). SQL uses `sqlfluff` (`.sqlfluff`, BigQuery dialect, dbt templater) once dbt models exist. `pre-commit install` activates both on commit (`.pre-commit-config.yaml`).
 
 ## Ingestion architecture
 

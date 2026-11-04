@@ -29,8 +29,7 @@ from pathlib import Path
 import pandas as pd
 from google.cloud import bigquery, storage
 
-from ingestion import config
-from ingestion import transform
+from ingestion import config, transform
 from ingestion.transform import COLUMNS as STAC_COLUMNS
 
 logger = logging.getLogger("ingestion.load_to_bigquery")
@@ -216,7 +215,9 @@ def check_dataframe(df: pd.DataFrame, source: Source) -> DQReport:
             report.errors.append(f"primary key has nulls: {sorted(nulls)}")
         dupes = int(df.duplicated(subset=present_pk).sum())
         if dupes:
-            report.errors.append(f"primary key {list(source.pk)} not unique: {dupes} duplicate row(s)")
+            report.errors.append(
+                f"primary key {list(source.pk)} not unique: {dupes} duplicate row(s)"
+            )
 
     return report
 
@@ -274,17 +275,44 @@ def load_from_gcs(
 
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--only", nargs="+", choices=list(SOURCES), help="subset of tables (default: all)")
-    parser.add_argument("--ingest-date", type=date.fromisoformat, default=date.today(), help="partition date, YYYY-MM-DD")
-    parser.add_argument("--stac-dir", type=Path, default=config.RAW_OUTPUT_DIR, help="where to find the STAC parquet")
-    parser.add_argument("--stac-path", type=Path, default=None, help="explicit STAC parquet (overrides --stac-dir)")
-    parser.add_argument("--synthetic-dir", type=Path, default=config.SYNTHETIC_RAW_DIR, help="where the synthetic CSVs live")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--only", nargs="+", choices=list(SOURCES), help="subset of tables (default: all)"
+    )
+    parser.add_argument(
+        "--ingest-date",
+        type=date.fromisoformat,
+        default=date.today(),
+        help="partition date, YYYY-MM-DD",
+    )
+    parser.add_argument(
+        "--stac-dir",
+        type=Path,
+        default=config.RAW_OUTPUT_DIR,
+        help="where to find the STAC parquet",
+    )
+    parser.add_argument(
+        "--stac-path", type=Path, default=None, help="explicit STAC parquet (overrides --stac-dir)"
+    )
+    parser.add_argument(
+        "--synthetic-dir",
+        type=Path,
+        default=config.SYNTHETIC_RAW_DIR,
+        help="where the synthetic CSVs live",
+    )
     parser.add_argument("--project", default=config.GCP_PROJECT_ID, help="GCP project id")
     parser.add_argument("--bucket", default=config.GCS_BUCKET_NAME, help="GCS landing bucket")
-    parser.add_argument("--dataset", default=config.BIGQUERY_RAW_DATASET, help="BigQuery raw dataset")
-    parser.add_argument("--location", default=config.BIGQUERY_LOCATION, help="BigQuery/GCS location")
-    parser.add_argument("--dry-run", action="store_true", help="run DQ checks only; touch no GCP resources")
+    parser.add_argument(
+        "--dataset", default=config.BIGQUERY_RAW_DATASET, help="BigQuery raw dataset"
+    )
+    parser.add_argument(
+        "--location", default=config.BIGQUERY_LOCATION, help="BigQuery/GCS location"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="run DQ checks only; touch no GCP resources"
+    )
     parser.add_argument(
         "--no-fail-on-dq",
         action="store_true",
@@ -298,7 +326,9 @@ def main(
     storage_client: storage.Client | None = None,
     bq_client: bigquery.Client | None = None,
 ) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
     args = parse_args(argv)
 
     tables = args.only or list(SOURCES)
@@ -340,9 +370,14 @@ def main(
         logger.error("no loadable sources; nothing to do")
         return 1
 
-    missing_cfg = [name for name, val in (("--project", args.project), ("--bucket", args.bucket)) if not val]
+    missing_cfg = [
+        name for name, val in (("--project", args.project), ("--bucket", args.bucket)) if not val
+    ]
     if missing_cfg:
-        logger.error("missing required config: %s (set GCP_PROJECT_ID / GCS_BUCKET_NAME or pass flags)", missing_cfg)
+        logger.error(
+            "missing required config: %s (set GCP_PROJECT_ID / GCS_BUCKET_NAME or pass flags)",
+            missing_cfg,
+        )
         return 2
 
     storage_client = storage_client or storage.Client(project=args.project)
@@ -355,7 +390,9 @@ def main(
         table_id = f"{args.project}.{args.dataset}.{source.table}"
         loaded = load_from_gcs(bq_client, table_id, uri, source, args.location)
         if loaded != len(df):
-            logger.error("[%s] row-count mismatch: source %d, loaded %s", source.table, len(df), loaded)
+            logger.error(
+                "[%s] row-count mismatch: source %d, loaded %s", source.table, len(df), loaded
+            )
             load_failed = True
 
     return 1 if load_failed else 0

@@ -1,12 +1,7 @@
-from datetime import date
-from pathlib import Path
-
 import pandas as pd
 import pytest
 
-from ingestion import load_to_bigquery as loader
 from ingestion.load_to_bigquery import SOURCES, check_dataframe, main, newest_stac_parquet
-
 
 # --------------------------------------------------------------------------- #
 # Fixtures: a tmp "raw" tree with one small valid file per table.
@@ -53,9 +48,7 @@ def raw_tree(tmp_path):
 
     stac_dir = tmp_path / "stac_items"
     stac_dir.mkdir()
-    stac = pd.DataFrame(
-        {col: [None, None] for col in SOURCES["stac_items"].expected_columns}
-    )
+    stac = pd.DataFrame({col: [None, None] for col in SOURCES["stac_items"].expected_columns})
     stac["item_id"] = ["a", "b"]
     stac["region"] = ["sahel", "amazon"]
     stac.to_parquet(stac_dir / "stac_items_20251001_20260930.parquet", index=False)
@@ -65,12 +58,18 @@ def raw_tree(tmp_path):
 
 def run(raw_tree, storage, bq, *extra):
     argv = [
-        "--synthetic-dir", str(raw_tree / "synthetic"),
-        "--stac-dir", str(raw_tree / "stac_items"),
-        "--project", "proj",
-        "--bucket", "proj-raw",
-        "--dataset", "raw",
-        "--ingest-date", "2026-11-02",
+        "--synthetic-dir",
+        str(raw_tree / "synthetic"),
+        "--stac-dir",
+        str(raw_tree / "stac_items"),
+        "--project",
+        "proj",
+        "--bucket",
+        "proj-raw",
+        "--dataset",
+        "raw",
+        "--ingest-date",
+        "2026-11-02",
         *extra,
     ]
     return main(argv, storage_client=storage, bq_client=bq)
@@ -167,7 +166,7 @@ def test_main_stac_parquet_loads_with_explicit_schema(raw_tree, fake_storage_cls
 
     assert run(raw_tree, storage, bq, "--only", "stac_items") == 0
 
-    (name,) = [name for (_, name, _) in storage.uploads]
+    (name,) = (name for (_, name, _) in storage.uploads)
     assert name.startswith("stac_items/ingest_date=2026-11-02/")
 
     (call,) = bq.load_calls
@@ -205,9 +204,12 @@ def test_main_missing_source_file(raw_tree, fake_storage_cls, fake_bq_cls):
 def test_main_dry_run_touches_no_gcp(raw_tree):
     # No clients injected: a dry run must not instantiate real GCP clients.
     argv = [
-        "--synthetic-dir", str(raw_tree / "synthetic"),
-        "--stac-dir", str(raw_tree / "stac_items"),
-        "--only", "customers",
+        "--synthetic-dir",
+        str(raw_tree / "synthetic"),
+        "--stac-dir",
+        str(raw_tree / "stac_items"),
+        "--only",
+        "customers",
         "--dry-run",
     ]
     assert main(argv) == 0
@@ -237,10 +239,14 @@ def test_main_missing_project_config(raw_tree, fake_storage_cls, fake_bq_cls):
     storage = fake_storage_cls()
     bq = fake_bq_cls(storage=storage)
     argv = [
-        "--synthetic-dir", str(raw_tree / "synthetic"),
-        "--only", "customers",
-        "--project", "",
-        "--bucket", "",
+        "--synthetic-dir",
+        str(raw_tree / "synthetic"),
+        "--only",
+        "customers",
+        "--project",
+        "",
+        "--bucket",
+        "",
     ]
     assert main(argv, storage_client=storage, bq_client=bq) == 2
     assert bq.load_calls == []
