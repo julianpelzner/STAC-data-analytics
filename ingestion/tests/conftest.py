@@ -1,6 +1,6 @@
 import copy
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pystac
@@ -8,7 +8,7 @@ import pytest
 
 FIXTURES = Path(__file__).parent / "fixtures"
 STAC_URL = "https://example.test/stac/v1"
-INGESTED_AT = datetime(2026, 10, 1, tzinfo=timezone.utc)
+INGESTED_AT = datetime(2026, 10, 1, tzinfo=UTC)
 
 
 @pytest.fixture
@@ -43,7 +43,10 @@ class FakeSearch:
 
 
 class FakeClient:
-    """Stands in for pystac_client.Client: returns items whose datetime falls in the requested window."""
+    """Stands in for pystac_client.Client.
+
+    Returns items whose datetime falls in the requested window.
+    """
 
     def __init__(self, items):
         self._items = items
@@ -51,7 +54,9 @@ class FakeClient:
 
     def search(self, **params):
         self.calls.append(params)
-        start, end = (datetime.fromisoformat(s.replace("Z", "+00:00")) for s in params["datetime"].split("/"))
+        start, end = (
+            datetime.fromisoformat(s.replace("Z", "+00:00")) for s in params["datetime"].split("/")
+        )
         return FakeSearch([i for i in self._items if start <= i.datetime <= end])
 
 
@@ -119,7 +124,12 @@ class FakeBQClient:
 
     def load_table_from_uri(self, source_uri, destination, job_config=None, location=None):
         self.load_calls.append(
-            {"uri": source_uri, "table": destination, "job_config": job_config, "location": location}
+            {
+                "uri": source_uri,
+                "table": destination,
+                "job_config": job_config,
+                "location": location,
+            }
         )
         table = destination.split(".")[-1]
         if table in self.row_counts:

@@ -28,7 +28,9 @@ def test_month_windows_partial_and_year_boundary():
 
 
 def test_month_windows_single_day():
-    assert month_windows(date(2026, 5, 5), date(2026, 5, 5)) == [(date(2026, 5, 5), date(2026, 5, 5))]
+    assert month_windows(date(2026, 5, 5), date(2026, 5, 5)) == [
+        (date(2026, 5, 5), date(2026, 5, 5))
+    ]
 
 
 def test_month_windows_rejects_inverted_range():
@@ -38,7 +40,10 @@ def test_month_windows_rejects_inverted_range():
 
 def test_build_search_params():
     params = build_search_params(
-        (1.5, 13.0, 2.5, 14.0), (date(2026, 8, 1), date(2026, 8, 31)), "sentinel-2-l2a", max_items=10
+        (1.5, 13.0, 2.5, 14.0),
+        (date(2026, 8, 1), date(2026, 8, 31)),
+        "sentinel-2-l2a",
+        max_items=10,
     )
     assert params == {
         "collections": ["sentinel-2-l2a"],

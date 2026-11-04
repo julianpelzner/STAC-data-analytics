@@ -21,13 +21,20 @@ def aoi_config(tmp_path):
 
 def run(tmp_path, aoi_config, client, *extra):
     argv = [
-        "--start", "2026-07-01",
-        "--end", "2026-08-31",
-        "--aoi-config", str(aoi_config),
-        "--output-dir", str(tmp_path / "raw"),
-        "--sample-path", str(tmp_path / "sample" / "sample.parquet"),
-        "--sample-size", "2",
-        "--report-dir", str(tmp_path / "reports"),
+        "--start",
+        "2026-07-01",
+        "--end",
+        "2026-08-31",
+        "--aoi-config",
+        str(aoi_config),
+        "--output-dir",
+        str(tmp_path / "raw"),
+        "--sample-path",
+        str(tmp_path / "sample" / "sample.parquet"),
+        "--sample-size",
+        "2",
+        "--report-dir",
+        str(tmp_path / "reports"),
         *extra,
     ]
     return main(argv, client=client)
@@ -79,7 +86,9 @@ def test_main_unknown_region(tmp_path, aoi_config, fake_client_cls):
 
 
 def test_main_validation_failure_writes_nothing(tmp_path, aoi_config, make_item, fake_client_cls):
-    client = fake_client_cls([make_item("a", "2026-07-15T10:00:00Z", properties={"eo:cloud_cover": 150})])
+    client = fake_client_cls(
+        [make_item("a", "2026-07-15T10:00:00Z", properties={"eo:cloud_cover": 150})]
+    )
     assert run(tmp_path, aoi_config, client) == 1
     assert not (tmp_path / "raw").exists()
 
@@ -90,7 +99,9 @@ def test_main_validation_failure_writes_nothing(tmp_path, aoi_config, make_item,
 
 
 def test_main_no_fail_on_validation(tmp_path, aoi_config, make_item, fake_client_cls):
-    client = fake_client_cls([make_item("a", "2026-07-15T10:00:00Z", properties={"eo:cloud_cover": 150})])
+    client = fake_client_cls(
+        [make_item("a", "2026-07-15T10:00:00Z", properties={"eo:cloud_cover": 150})]
+    )
     assert run(tmp_path, aoi_config, client, "--no-fail-on-validation") == 0
     assert any((tmp_path / "raw").glob("*.parquet"))
 

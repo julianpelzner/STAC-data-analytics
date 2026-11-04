@@ -11,7 +11,7 @@ import argparse
 import json
 import logging
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -35,16 +35,28 @@ def default_window(today: date) -> tuple[date, date]:
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     default_start, default_end = default_window(date.today())
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--start", type=date.fromisoformat, default=default_start, help="inclusive, YYYY-MM-DD")
-    parser.add_argument("--end", type=date.fromisoformat, default=default_end, help="inclusive, YYYY-MM-DD")
-    parser.add_argument("--regions", nargs="+", help="subset of AOI names from aois.yaml (default: all)")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--start", type=date.fromisoformat, default=default_start, help="inclusive, YYYY-MM-DD"
+    )
+    parser.add_argument(
+        "--end", type=date.fromisoformat, default=default_end, help="inclusive, YYYY-MM-DD"
+    )
+    parser.add_argument(
+        "--regions", nargs="+", help="subset of AOI names from aois.yaml (default: all)"
+    )
     parser.add_argument("--collection", default=config.DEFAULT_COLLECTION)
-    parser.add_argument("--max-items-per-window", type=int, default=None, help="cap per AOI per month (for testing)")
+    parser.add_argument(
+        "--max-items-per-window", type=int, default=None, help="cap per AOI per month (for testing)"
+    )
     parser.add_argument("--aoi-config", type=Path, default=config.AOI_CONFIG_PATH)
     parser.add_argument("--output-dir", type=Path, default=config.RAW_OUTPUT_DIR)
     parser.add_argument("--sample-path", type=Path, default=config.SAMPLE_OUTPUT_PATH)
-    parser.add_argument("--sample-size", type=int, default=500, help="0 disables writing the sample")
+    parser.add_argument(
+        "--sample-size", type=int, default=500, help="0 disables writing the sample"
+    )
     parser.add_argument("--report-dir", type=Path, default=config.VALIDATION_REPORT_DIR)
     parser.add_argument("--stac-api-url", default=config.STAC_API_URL)
     parser.add_argument(
@@ -87,14 +99,19 @@ def write_validation_report(
         **report.to_dict(),
     }
     args.report_dir.mkdir(parents=True, exist_ok=True)
-    path = args.report_dir / f"validation_{args.start:%Y%m%d}_{args.end:%Y%m%d}_{ingested_at:%Y%m%dT%H%M%SZ}.json"
+    path = (
+        args.report_dir
+        / f"validation_{args.start:%Y%m%d}_{args.end:%Y%m%d}_{ingested_at:%Y%m%dT%H%M%SZ}.json"
+    )
     path.write_text(json.dumps(payload, indent=2))
     logger.info("wrote validation report to %s", path)
     return path
 
 
 def main(argv: list[str] | None = None, client: Client | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
     args = parse_args(argv)
 
     aois = config.load_aois(args.aoi_config)
@@ -107,14 +124,20 @@ def main(argv: list[str] | None = None, client: Client | None = None) -> int:
 
     logger.info(
         "pulling %s for %d AOIs, %s..%s from %s",
-        args.collection, len(aois), args.start, args.end, args.stac_api_url,
+        args.collection,
+        len(aois),
+        args.start,
+        args.end,
+        args.stac_api_url,
     )
     client = client or open_client(args.stac_api_url)
-    ingested_at = datetime.now(timezone.utc)
+    ingested_at = datetime.now(UTC)
 
     records = []
     for aoi in aois:
-        for item in search_items(client, aoi, args.start, args.end, args.collection, args.max_items_per_window):
+        for item in search_items(
+            client, aoi, args.start, args.end, args.collection, args.max_items_per_window
+        ):
             records.append(item_to_record(item, aoi.name, args.stac_api_url, ingested_at))
 
     df = records_to_dataframe(records)
@@ -143,7 +166,9 @@ def main(argv: list[str] | None = None, client: Client | None = None) -> int:
         logger.info("wrote %d-row sample to %s", len(sample), args.sample_path)
 
     if not df.empty:
-        summary = df.groupby("region").agg(items=("item_id", "count"), mean_cloud_cover=("cloud_cover", "mean"))
+        summary = df.groupby("region").agg(
+            items=("item_id", "count"), mean_cloud_cover=("cloud_cover", "mean")
+        )
         logger.info("summary:\n%s", summary.round(1).to_string())
     return 0
 

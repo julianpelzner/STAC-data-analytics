@@ -16,7 +16,7 @@ import logging
 import math
 import sys
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -68,11 +68,13 @@ def _unit_blob(rng: np.random.Generator, n_vertices: int, jitter: float) -> Poly
     base = (np.arange(n) + rng.uniform(0.15, 0.85, n)) * sector
     radii = 1.0 + jitter * rng.uniform(-1, 1, n)
     radii = np.clip(radii, 0.1, None)
-    coords = [(r * math.cos(t), r * math.sin(t)) for t, r in zip(base, radii)]
+    coords = [(r * math.cos(t), r * math.sin(t)) for t, r in zip(base, radii, strict=True)]
     return Polygon(coords)
 
 
-def _unit_corridor(rng: np.random.Generator, n_vertices: int, jitter: float, aspect: float) -> Polygon:
+def _unit_corridor(
+    rng: np.random.Generator, n_vertices: int, jitter: float, aspect: float
+) -> Polygon:
     """Long thin strip of length:width = aspect. Vertices are split between the
     two long edges, so a corridor gets the very low compactness pipelines and
     transmission lines have in reality."""
@@ -99,7 +101,10 @@ def _unit_rectangle(rng: np.random.Generator, n_vertices: int, jitter: float) ->
         a, b = coords[i], coords[(i + 1) % len(coords)]
         mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
         coords.insert(i + 1, mid)
-    jittered = [(x + jitter * rng.uniform(-1, 1) * 0.1, y + jitter * rng.uniform(-1, 1) * 0.1) for x, y in coords]
+    jittered = [
+        (x + jitter * rng.uniform(-1, 1) * 0.1, y + jitter * rng.uniform(-1, 1) * 0.1)
+        for x, y in coords
+    ]
     return Polygon(jittered)
 
 
@@ -164,7 +169,7 @@ def build_aoi_polygon(
 def compactness(poly_km: Polygon) -> float:
     """Polsby-Popper: 1 for a circle, toward 0 for thin or jagged shapes.
     Measured in the km plane so it is independent of latitude distortion."""
-    return 4 * math.pi * poly_km.area / (poly_km.length ** 2)
+    return 4 * math.pi * poly_km.area / (poly_km.length**2)
 
 
 # --------------------------------------------------------------------------- #
@@ -225,7 +230,14 @@ def price_order(area_km2: float, tier: str, priority: str, segment: str, pricing
     return round(max(pricing["min_order_fee"], gross), 2)
 
 
-def processing_hours(rng: np.random.Generator, area_km2: float, compact: float, vertices: int, priority: str, pt: dict) -> float:
+def processing_hours(
+    rng: np.random.Generator,
+    area_km2: float,
+    compact: float,
+    vertices: int,
+    priority: str,
+    pt: dict,
+) -> float:
     hours = (
         pt["base_hours"][priority]
         * (1 + pt["alpha"] * math.log1p(area_km2))
@@ -241,7 +253,9 @@ def _random_time(rng: np.random.Generator) -> time:
     return time(secs // 3600, (secs % 3600) // 60, secs % 60)
 
 
-def generate(cfg: dict, aois_cfg: list[AOI], seed: int, start: date, end: date) -> dict[str, pd.DataFrame]:
+def generate(
+    cfg: dict, aois_cfg: list[AOI], seed: int, start: date, end: date
+) -> dict[str, pd.DataFrame]:
     """Build the three tables. Pure given (cfg, aois, seed, window): no I/O."""
     rng = np.random.default_rng(seed)
     faker = Faker()
@@ -282,8 +296,12 @@ def generate(cfg: dict, aois_cfg: list[AOI], seed: int, start: date, end: date) 
                 aoi_id = f"AOI-{len(aois) + 1:05d}"
                 region = choose_region(rng, seg_cfg["regions"], bboxes)
                 shape = choose_shape(rng, seg_cfg)
-                target_area = sample_log_uniform(rng, seg_cfg["area_km2"]["min"], seg_cfg["area_km2"]["max"])
-                target_vertices = int(rng.integers(seg_cfg["vertex_count"]["min"], seg_cfg["vertex_count"]["max"] + 1))
+                target_area = sample_log_uniform(
+                    rng, seg_cfg["area_km2"]["min"], seg_cfg["area_km2"]["max"]
+                )
+                target_vertices = int(
+                    rng.integers(seg_cfg["vertex_count"]["min"], seg_cfg["vertex_count"]["max"] + 1)
+                )
 
                 poly, area_km2 = build_aoi_polygon(
                     rng, shape, shapes[shape], target_area, target_vertices, bboxes[region].bbox
@@ -292,7 +310,10 @@ def generate(cfg: dict, aois_cfg: list[AOI], seed: int, start: date, end: date) 
                 # longitude distortion near the poles doesn't skew it.
                 center_lat = (bboxes[region].bbox[1] + bboxes[region].bbox[3]) / 2
                 poly_km = affinity.scale(
-                    poly, xfact=km_per_deg_lon(center_lat), yfact=KM_PER_DEG_LAT, origin=poly.centroid
+                    poly,
+                    xfact=km_per_deg_lon(center_lat),
+                    yfact=KM_PER_DEG_LAT,
+                    origin=poly.centroid,
                 )
                 vertices = len(poly.exterior.coords) - 1
 
@@ -314,11 +335,17 @@ def generate(cfg: dict, aois_cfg: list[AOI], seed: int, start: date, end: date) 
                 n_orders = max(1, int(rng.poisson(seg_cfg["orders_per_aoi"])))
                 for _ in range(n_orders):
                     order_id = f"ORD-{len(orders) + 1:06d}"
-                    window_days = int(rng.integers(seg_cfg["window_days"]["min"], seg_cfg["window_days"]["max"] + 1))
+                    window_days = int(
+                        rng.integers(
+                            seg_cfg["window_days"]["min"], seg_cfg["window_days"]["max"] + 1
+                        )
+                    )
                     # Keep the whole window inside the STAC range (decision 4).
                     latest_offset = max(0, total_days - window_days)
                     day_offset = int(rng.integers(0, latest_offset + 1))
-                    ordered_at = datetime.combine(start + timedelta(days=day_offset), _random_time(rng), tzinfo=timezone.utc)
+                    ordered_at = datetime.combine(
+                        start + timedelta(days=day_offset), _random_time(rng), tzinfo=UTC
+                    )
                     window_start = ordered_at + timedelta(days=ordering["lead_days"])
                     window_end = window_start + timedelta(days=window_days)
                     priority = "rush" if rng.random() < seg_cfg["rush_share"] else "standard"
@@ -332,7 +359,9 @@ def generate(cfg: dict, aois_cfg: list[AOI], seed: int, start: date, end: date) 
                             "window_end": window_end,
                             "max_cloud_cover": float(seg_cfg["cloud_max"]),
                             "priority": priority,
-                            "price_usd": price_order(area_km2, customers[-1]["contract_tier"], priority, segment, pricing),
+                            "price_usd": price_order(
+                                area_km2, customers[-1]["contract_tier"], priority, segment, pricing
+                            ),
                             "processing_hours": processing_hours(
                                 rng, area_km2, aois[-1]["compactness"], vertices, priority, pt
                             ),
@@ -353,7 +382,8 @@ def generate(cfg: dict, aois_cfg: list[AOI], seed: int, start: date, end: date) 
     first_aoi = aois_df.groupby("customer_id")["created_at"].min()
     max_tenure = ordering["max_tenure_days_before_first_order"]
     customers_df["signup_date"] = [
-        (first_aoi[c] - timedelta(days=int(rng.integers(1, max_tenure)))).date() for c in customers_df["customer_id"]
+        (first_aoi[c] - timedelta(days=int(rng.integers(1, max_tenure)))).date()
+        for c in customers_df["customer_id"]
     ]
 
     return {"customers": customers_df, "aois": aois_df, "orders": orders_df}
@@ -389,20 +419,38 @@ def sample_tables(tables: dict[str, pd.DataFrame], n_customers: int) -> dict[str
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     default_start, default_end = default_window(date.today())
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--seed", type=int, default=42, help="drives numpy + Faker; same seed => identical output")
-    parser.add_argument("--start", type=date.fromisoformat, default=default_start, help="order window floor, YYYY-MM-DD")
-    parser.add_argument("--end", type=date.fromisoformat, default=default_end, help="order window ceiling, YYYY-MM-DD")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42, help="drives numpy + Faker; same seed => identical output"
+    )
+    parser.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=default_start,
+        help="order window floor, YYYY-MM-DD",
+    )
+    parser.add_argument(
+        "--end",
+        type=date.fromisoformat,
+        default=default_end,
+        help="order window ceiling, YYYY-MM-DD",
+    )
     parser.add_argument("--config", type=Path, default=config.SYNTHETIC_CONFIG_PATH)
     parser.add_argument("--aoi-config", type=Path, default=config.AOI_CONFIG_PATH)
     parser.add_argument("--output-dir", type=Path, default=config.SYNTHETIC_RAW_DIR)
     parser.add_argument("--sample-dir", type=Path, default=config.SYNTHETIC_SAMPLE_DIR)
-    parser.add_argument("--sample-customers", type=int, default=15, help="0 disables writing the committed sample")
+    parser.add_argument(
+        "--sample-customers", type=int, default=15, help="0 disables writing the committed sample"
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
     args = parse_args(argv)
 
     if args.start >= args.end:

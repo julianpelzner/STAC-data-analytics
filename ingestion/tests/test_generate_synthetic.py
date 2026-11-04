@@ -4,7 +4,7 @@ Generation is pure and offline, so these run the real shipped config against a
 fixed window and assert on the resulting tables. One CLI test covers the I/O.
 """
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pandas as pd
 import pytest
@@ -119,8 +119,8 @@ def test_date_chain_holds(tables):
 
 
 def test_windows_within_stac_range(tables):
-    lo = datetime(START.year, START.month, START.day, tzinfo=timezone.utc)
-    hi = datetime(END.year, END.month, END.day, tzinfo=timezone.utc) + pd.Timedelta(days=1)
+    lo = datetime(START.year, START.month, START.day, tzinfo=UTC)
+    hi = datetime(END.year, END.month, END.day, tzinfo=UTC) + pd.Timedelta(days=1)
     orders = tables["orders"]
     assert (orders["window_start"] >= lo).all()
     assert (orders["window_end"] <= hi).all()
@@ -164,12 +164,18 @@ def test_different_seed_differs(cfg, aois_cfg, tables):
 def test_main_writes_tables_and_referential_sample(tmp_path):
     out_dir, sample_dir = tmp_path / "raw", tmp_path / "sample"
     argv = [
-        "--seed", str(SEED),
-        "--start", START.isoformat(),
-        "--end", END.isoformat(),
-        "--output-dir", str(out_dir),
-        "--sample-dir", str(sample_dir),
-        "--sample-customers", "10",
+        "--seed",
+        str(SEED),
+        "--start",
+        START.isoformat(),
+        "--end",
+        END.isoformat(),
+        "--output-dir",
+        str(out_dir),
+        "--sample-dir",
+        str(sample_dir),
+        "--sample-customers",
+        "10",
     ]
     assert main(argv) == 0
 

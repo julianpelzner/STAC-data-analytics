@@ -12,7 +12,9 @@ START, END = date(2026, 8, 1), date(2026, 8, 31)
 @pytest.fixture
 def clean_df(make_item):
     records = [
-        item_to_record(make_item(f"item-{i}", f"2026-08-{10 + i}T10:00:00Z"), "sahel", STAC_URL, INGESTED_AT)
+        item_to_record(
+            make_item(f"item-{i}", f"2026-08-{10 + i}T10:00:00Z"), "sahel", STAC_URL, INGESTED_AT
+        )
         for i in range(5)
     ]
     return records_to_dataframe(records)
@@ -67,12 +69,21 @@ def test_high_null_cloud_cover_warns(clean_df):
 def test_null_cloud_cover_checked_per_region(make_item):
     # 1 null in 35 rows overall (~2.9%) stays under the threshold; sahel alone is 20%.
     records = [
-        item_to_record(make_item(f"amazon-{i}", f"2026-08-{1 + i:02d}T10:00:00Z"), "amazon", STAC_URL, INGESTED_AT)
+        item_to_record(
+            make_item(f"amazon-{i}", f"2026-08-{1 + i:02d}T10:00:00Z"),
+            "amazon",
+            STAC_URL,
+            INGESTED_AT,
+        )
         for i in range(30)
     ]
     records += [
         item_to_record(
-            make_item(f"sahel-{i}", f"2026-08-{10 + i}T10:00:00Z", drop=("eo:cloud_cover",) if i == 0 else ()),
+            make_item(
+                f"sahel-{i}",
+                f"2026-08-{10 + i}T10:00:00Z",
+                drop=("eo:cloud_cover",) if i == 0 else (),
+            ),
             "sahel",
             STAC_URL,
             INGESTED_AT,
